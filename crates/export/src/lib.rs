@@ -23,6 +23,7 @@ mod as_rtf;
 mod clip;
 mod flow;
 mod layout;
+mod structured;
 
 pub(crate) use as_docx::hex;
 #[cfg(test)]
@@ -40,6 +41,7 @@ pub use clip::{ClipBuilder, ClipSpan, ClipStyle, ClipText, MAX_CLIP_HTML_BYTES, 
 #[cfg(test)]
 use flow::list_item;
 pub use layout::{Block, Cell, Image, Page, Table};
+pub use structured::{Structured, StructuredRun, structured};
 #[cfg(test)]
 use layout::{LOOKUP_STEPS, MAX_COLS, body_size};
 pub(crate) use layout::{Run, flowing_paragraphs, reading_order, tables};
