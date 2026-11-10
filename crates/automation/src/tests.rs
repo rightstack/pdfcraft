@@ -39,6 +39,21 @@ fn search_document(a: &mut Automation, pages: usize) -> DocId {
 }
 
 #[test]
+fn tools_work_on_a_session_the_host_opened_and_edits() {
+    let mut s = Session::new();
+    let id = s.open("host.pdf", None, Arc::new(numbered_pages(3)), None).unwrap();
+    let mut a = Automation::with_session(s);
+    assert_eq!(json(&mut a, "text_find", json!({ "doc": id.0, "query": "Page 2" }))["count"], 1);
+    // The host edits through the session; the tools see the edit.
+    a.session_mut().apply(id, Edit::DeletePages { pages: vec![1] }).unwrap();
+    assert_eq!(json(&mut a, "text_find", json!({ "doc": id.0, "query": "Page 2" }))["count"], 0);
+    assert_eq!(json(&mut a, "doc_info", json!({ "doc": id.0 }))["pages"].as_array().map(Vec::len), Some(2));
+    a.session_mut().close(id);
+    a.forget(id);
+    assert!(a.call("doc_info", &json!({ "doc": id.0 })).is_err());
+}
+
+#[test]
 fn search_cache_stays_bounded_reextracts_and_follows_edits_and_close() {
     let mut a = Automation::new();
     a.texts = TextCache::new(16 * 1024);

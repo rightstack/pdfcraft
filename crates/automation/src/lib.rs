@@ -163,8 +163,32 @@ impl Automation {
         self
     }
 
+    /// Tools over a session the host already holds, so the tools and the host's own interface
+    /// work on the same open documents (a host without a file system opens them from bytes with
+    /// [`Session::open`] and passes their ids to the tools).
+    pub fn with_session(session: Session) -> Self {
+        Self { session, ..Self::new() }
+    }
+
     pub fn session(&self) -> &Session {
         &self.session
+    }
+
+    /// The session, for a host that edits, saves or closes its documents itself. Cached page
+    /// renderers and text follow the documents' working bytes, so they refresh after such edits;
+    /// a host that closes a document here should also call [`Automation::forget`].
+    pub fn session_mut(&mut self) -> &mut Session {
+        &mut self.session
+    }
+
+    /// Drop what the tools remember about `id` (renderers, text, paragraph listings) after the
+    /// host closed it through [`Automation::session_mut`].
+    pub fn forget(&mut self, id: DocId) {
+        self.renderers.remove(&id);
+        self.texts.remove(&id);
+        self.listed.retain(|(d, _), _| *d != id);
+        self.evicted.remove(&id);
+        self.ocr_reviews.remove(&id);
     }
 
     /// Save `bytes` that a caller writes on the session's behalf, such as `pdfcraft-cli run`
